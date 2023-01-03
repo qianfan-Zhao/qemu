@@ -42,6 +42,7 @@ const hwaddr allwinner_r40_memmap[] = {
     [AW_R40_DEV_MMC1]       = 0x01c10000,
     [AW_R40_DEV_MMC2]       = 0x01c11000,
     [AW_R40_DEV_MMC3]       = 0x01c12000,
+    [AW_R40_DEV_CCU]        = 0x01c20000,
     [AW_R40_DEV_PIT]        = 0x01c20c00,
     [AW_R40_DEV_UART0]      = 0x01c28000,
     [AW_R40_DEV_GIC_DIST]   = 0x01c81000,
@@ -80,7 +81,6 @@ static struct AwR40Unimplemented r40_unimplemented[] = {
     { "usb2-host",  0x01c1c000, 4 * KiB },
     { "cs1",        0x01c1d000, 4 * KiB },
     { "spi3",       0x01c1f000, 4 * KiB },
-    { "ccu",        0x01c20000, 1 * KiB },
     { "rtc",        0x01c20400, 1 * KiB },
     { "pio",        0x01c20800, 1 * KiB },
     { "owa",        0x01c21000, 1 * KiB },
@@ -245,6 +245,7 @@ static void allwinner_r40_init(Object *obj)
     object_property_add_alias(obj, "clk1-freq", OBJECT(&s->timer),
                               "clk1-freq");
 
+    object_initialize_child(obj, "ccu", &s->ccu, TYPE_AW_R40_CCU);
     object_initialize_child(obj, "mmc0", &s->mmc0, TYPE_AW_SDHOST_SUN5I);
     object_initialize_child(obj, "mmc1", &s->mmc1, TYPE_AW_SDHOST_SUN5I);
     object_initialize_child(obj, "mmc2", &s->mmc2, TYPE_AW_SDHOST_SUN5I);
@@ -356,6 +357,10 @@ static void allwinner_r40_realize(DeviceState *dev, Error **errp)
                                 &s->sram_a3);
     memory_region_add_subregion(get_system_memory(), s->memmap[AW_R40_DEV_SRAM_A4],
                                 &s->sram_a4);
+
+    /* Clock Control Unit */
+    sysbus_realize(SYS_BUS_DEVICE(&s->ccu), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccu), 0, s->memmap[AW_R40_DEV_CCU]);
 
     /* SD/MMC */
     object_property_set_link(OBJECT(&s->mmc0), "dma-memory",
