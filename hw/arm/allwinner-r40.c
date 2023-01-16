@@ -45,6 +45,13 @@ const hwaddr allwinner_r40_memmap[] = {
     [AW_R40_DEV_CCU]        = 0x01c20000,
     [AW_R40_DEV_PIT]        = 0x01c20c00,
     [AW_R40_DEV_UART0]      = 0x01c28000,
+    [AW_R40_DEV_UART1]      = 0x01c28400,
+    [AW_R40_DEV_UART2]      = 0x01c28800,
+    [AW_R40_DEV_UART3]      = 0x01c28c00,
+    [AW_R40_DEV_UART4]      = 0x01c29000,
+    [AW_R40_DEV_UART5]      = 0x01c29400,
+    [AW_R40_DEV_UART6]      = 0x01c29800,
+    [AW_R40_DEV_UART7]      = 0x01c29c00,
     [AW_R40_DEV_GIC_DIST]   = 0x01c81000,
     [AW_R40_DEV_GIC_CPU]    = 0x01c82000,
     [AW_R40_DEV_GIC_HYP]    = 0x01c84000,
@@ -159,6 +166,10 @@ enum {
     AW_R40_GIC_SPI_UART1     =  2,
     AW_R40_GIC_SPI_UART2     =  3,
     AW_R40_GIC_SPI_UART3     =  4,
+    AW_R40_GIC_SPI_UART4     = 17,
+    AW_R40_GIC_SPI_UART5     = 18,
+    AW_R40_GIC_SPI_UART6     = 19,
+    AW_R40_GIC_SPI_UART7     = 20,
     AW_R40_GIC_SPI_TIMER0    = 22,
     AW_R40_GIC_SPI_TIMER1    = 23,
     AW_R40_GIC_SPI_MMC0      = 32,
@@ -395,6 +406,27 @@ static void allwinner_r40_realize(DeviceState *dev, Error **errp)
     serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART0], 2,
                    qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART0),
                    115200, serial_hd(0), DEVICE_NATIVE_ENDIAN);
+    serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART1], 2,
+                   qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART1),
+                   115200, serial_hd(1), DEVICE_NATIVE_ENDIAN);
+    serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART2], 2,
+                   qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART2),
+                   115200, serial_hd(2), DEVICE_NATIVE_ENDIAN);
+    serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART3], 2,
+                   qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART3),
+                   115200, serial_hd(3), DEVICE_NATIVE_ENDIAN);
+    serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART4], 2,
+                   qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART4),
+                   115200, serial_hd(4), DEVICE_NATIVE_ENDIAN);
+    serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART5], 2,
+                   qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART5),
+                   115200, serial_hd(5), DEVICE_NATIVE_ENDIAN);
+    serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART6], 2,
+                   qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART6),
+                   115200, serial_hd(6), DEVICE_NATIVE_ENDIAN);
+    serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART7], 2,
+                   qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART7),
+                   115200, serial_hd(7), DEVICE_NATIVE_ENDIAN);
 
     /* Unimplemented devices */
     for (i = 0; i < ARRAY_SIZE(r40_unimplemented); i++) {
