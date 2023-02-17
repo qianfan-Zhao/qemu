@@ -129,6 +129,39 @@ enum {
     STAT_IDLE = 0x1f
 } TWI_STAT_STA;
 
+#define TWI_STAT_STA_DESC(sta)  [sta] = #sta
+static const char *twi_stat_sta_descriptors[] = {
+    TWI_STAT_STA_DESC(STAT_BUS_ERROR),
+    TWI_STAT_STA_DESC(STAT_M_STA_TX),
+    TWI_STAT_STA_DESC(STAT_M_RSTA_TX),
+    TWI_STAT_STA_DESC(STAT_M_ADDR_WR_ACK),
+    TWI_STAT_STA_DESC(STAT_M_ADDR_WR_NACK),
+    TWI_STAT_STA_DESC(STAT_M_DATA_TX_ACK),
+    TWI_STAT_STA_DESC(STAT_M_DATA_TX_NACK),
+    TWI_STAT_STA_DESC(STAT_M_ARB_LOST),
+    TWI_STAT_STA_DESC(STAT_M_ADDR_RD_ACK),
+    TWI_STAT_STA_DESC(STAT_M_ADDR_RD_NACK),
+    TWI_STAT_STA_DESC(STAT_M_DATA_RX_ACK),
+    TWI_STAT_STA_DESC(STAT_M_DATA_RX_NACK),
+    TWI_STAT_STA_DESC(STAT_S_ADDR_WR_ACK),
+    TWI_STAT_STA_DESC(STAT_S_ARB_LOST_AW_ACK),
+    TWI_STAT_STA_DESC(STAT_S_GCA_ACK),
+    TWI_STAT_STA_DESC(STAT_S_ARB_LOST_GCA_ACK),
+    TWI_STAT_STA_DESC(STAT_S_DATA_RX_SA_ACK),
+    TWI_STAT_STA_DESC(STAT_S_DATA_RX_SA_NACK),
+    TWI_STAT_STA_DESC(STAT_S_DATA_RX_GCA_ACK),
+    TWI_STAT_STA_DESC(STAT_S_DATA_RX_GCA_NACK),
+    TWI_STAT_STA_DESC(STAT_S_STP_RSTA),
+    TWI_STAT_STA_DESC(STAT_S_ADDR_RD_ACK),
+    TWI_STAT_STA_DESC(STAT_S_ARB_LOST_AR_ACK),
+    TWI_STAT_STA_DESC(STAT_S_DATA_TX_ACK),
+    TWI_STAT_STA_DESC(STAT_S_DATA_TX_NACK),
+    TWI_STAT_STA_DESC(STAT_S_LB_TX_ACK),
+    TWI_STAT_STA_DESC(STAT_M_2ND_ADDR_WR_ACK),
+    TWI_STAT_STA_DESC(STAT_M_2ND_ADDR_WR_NACK),
+    TWI_STAT_STA_DESC(STAT_IDLE),
+};
+
 static const char *allwinner_i2c_get_regname(unsigned offset)
 {
     switch (offset) {
@@ -152,6 +185,79 @@ static const char *allwinner_i2c_get_regname(unsigned offset)
         return "LCR";
     default:
         return "[?]";
+    }
+}
+
+static const char *twi_cntr_reg_bits[] = {
+    [2] = "A_ACK",
+    [3] = "INT_FLAG",
+    [4] = "M_STP",
+    [5] = "M_STA",
+    [6] = "BUS_EN",
+    [7] = "INT_EN",
+};
+
+static const char *twi_line_ctrl_reg_bits[] = {
+    [5] = "SCL_STATE",
+    [4] = "SDA_STATE",
+    [3] = "SCL_CTL",
+    [2] = "SCL_CTL_EN",
+    [1] = "SDA_CTL",
+    [0] = "SDA_CTL_EN",
+};
+
+static void make_reg_value_bit_descriptors(char *s, size_t sz, uint8_t value,
+                                           const char **desc_arrays,
+                                           size_t array_size)
+{
+    unsigned i = 0;
+
+    for (; i < array_size; i++) {
+        if ((value & (1 << i)) && desc_arrays[i]) {
+            strncat(s, desc_arrays[i], sz - 1);
+            strncat(s, " ", sz - 1);
+        }
+    }
+}
+
+static void make_reg_value_descriptors(char *s, size_t sz, uint8_t addr,
+                                       uint8_t value)
+{
+    switch (addr) {
+    case TWI_CNTR_REG:
+        make_reg_value_bit_descriptors(s, sz, value, twi_cntr_reg_bits,
+                                       ARRAY_SIZE(twi_cntr_reg_bits));
+        break;
+    case TWI_LCR_REG:
+        make_reg_value_bit_descriptors(s, sz, value, twi_line_ctrl_reg_bits,
+                                       ARRAY_SIZE(twi_line_ctrl_reg_bits));
+        break;
+    case TWI_STAT_REG:
+        if (STAT_TO_STA(value) <= STAT_IDLE)
+            strncat(s, twi_stat_sta_descriptors[STAT_TO_STA(value)], sz - 1);
+        break;
+    }
+}
+
+static void allwinner_i2c_trace_read(uint8_t addr, uint8_t value)
+{
+    char desc[256] = { 0 };
+
+    if (trace_event_get_state_backends(TRACE_ALLWINNER_I2C_READ)) {
+       make_reg_value_descriptors(desc, sizeof(desc), addr, value);
+       trace_allwinner_i2c_read(allwinner_i2c_get_regname(addr),
+                                addr, value, desc);
+    }
+}
+
+static void allwinner_i2c_trace_write(uint8_t addr, uint8_t value)
+{
+    char desc[256] = { 0 };
+
+    if (trace_event_get_state_backends(TRACE_ALLWINNER_I2C_WRITE)) {
+        make_reg_value_descriptors(desc, sizeof(desc), addr, value);
+        trace_allwinner_i2c_write(allwinner_i2c_get_regname(addr),
+                                  addr, value, desc);
     }
 }
 
@@ -271,7 +377,7 @@ static uint64_t allwinner_i2c_read(void *opaque, hwaddr offset,
         break;
     }
 
-    trace_allwinner_i2c_read(allwinner_i2c_get_regname(offset), offset, value);
+    allwinner_i2c_trace_read((uint8_t)offset, (uint8_t)value);
 
     return (uint64_t)value;
 }
@@ -283,7 +389,7 @@ static void allwinner_i2c_write(void *opaque, hwaddr offset,
 
     value &= 0xff;
 
-    trace_allwinner_i2c_write(allwinner_i2c_get_regname(offset), offset, value);
+    allwinner_i2c_trace_write((uint8_t)offset, (uint8_t)value);
 
     switch (offset) {
     case TWI_ADDR_REG:

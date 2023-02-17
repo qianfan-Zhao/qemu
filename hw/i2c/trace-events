@@ -16,9 +16,8 @@ i2c_recv(uint8_t address, uint8_t data) "recv(addr:0x%02x) data:0x%02x"
 i2c_ack(void) ""
 
 # allwinner_i2c.c
-
-allwinner_i2c_read(const char* reg_name, uint64_t offset, uint64_t value) "read %s [0x%" PRIx64 "]: -> 0x%" PRIx64
-allwinner_i2c_write(const char* reg_name, uint64_t offset, uint64_t value) "write %s [0x%" PRIx64 "]: <- 0x%" PRIx64
+allwinner_i2c_read(const char *regname, uint8_t addr, uint8_t value, const char *desc)  " read  %6s(0x%02x): 0x%02x %s"
+allwinner_i2c_write(const char *regname, uint8_t addr, uint8_t value, const char *desc) "write %6s(0x%02x): 0x%02x %s"
 
 # aspeed_i2c.c
 
