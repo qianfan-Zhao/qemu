@@ -26,6 +26,7 @@
 #include "hw/intc/arm_gic.h"
 #include "hw/sd/allwinner-sdhost.h"
 #include "hw/misc/allwinner-r40-ccu.h"
+#include "hw/i2c/allwinner-i2c.h"
 #include "target/arm/cpu.h"
 #include "sysemu/block-backend.h"
 
@@ -48,6 +49,11 @@ enum {
     AW_R40_DEV_UART5,
     AW_R40_DEV_UART6,
     AW_R40_DEV_UART7,
+    AW_R40_DEV_TWI0,
+    AW_R40_DEV_TWI1,
+    AW_R40_DEV_TWI2,
+    AW_R40_DEV_TWI3,
+    AW_R40_DEV_TWI4,
     AW_R40_DEV_GIC_DIST,
     AW_R40_DEV_GIC_CPU,
     AW_R40_DEV_GIC_HYP,
@@ -89,6 +95,11 @@ struct AwR40State {
     AwSdHostState mmc2;
     AwSdHostState mmc3;
     AwR40ClockCtlState ccu;
+    AWI2CState i2c0;
+    AWI2CState i2c1;
+    AWI2CState i2c2;
+    AWI2CState i2c3;
+    AWI2CState i2c4;
     GICState gic;
     MemoryRegion sram_a1;
     MemoryRegion sram_a2;
