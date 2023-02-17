@@ -52,6 +52,11 @@ const hwaddr allwinner_r40_memmap[] = {
     [AW_R40_DEV_UART5]      = 0x01c29400,
     [AW_R40_DEV_UART6]      = 0x01c29800,
     [AW_R40_DEV_UART7]      = 0x01c29c00,
+    [AW_R40_DEV_TWI0]       = 0x01c2ac00,
+    [AW_R40_DEV_TWI1]       = 0x01c2b000,
+    [AW_R40_DEV_TWI2]       = 0x01c2b400,
+    [AW_R40_DEV_TWI3]       = 0x01c2b800,
+    [AW_R40_DEV_TWI4]       = 0x01c2c000,
     [AW_R40_DEV_GIC_DIST]   = 0x01c81000,
     [AW_R40_DEV_GIC_CPU]    = 0x01c82000,
     [AW_R40_DEV_GIC_HYP]    = 0x01c84000,
@@ -115,11 +120,6 @@ static struct AwR40Unimplemented r40_unimplemented[] = {
     { "uart7",      0x01c29c00, 1 * KiB },
     { "ps20",       0x01c2a000, 1 * KiB },
     { "ps21",       0x01c2a400, 1 * KiB },
-    { "twi0",       0x01c2ac00, 1 * KiB },
-    { "twi1",       0x01c2b000, 1 * KiB },
-    { "twi2",       0x01c2b400, 1 * KiB },
-    { "twi3",       0x01c2b800, 1 * KiB },
-    { "twi4",       0x01c2c000, 1 * KiB },
     { "scr",        0x01c2c400, 1 * KiB },
     { "tvd-top",    0x01c30000, 4 * KiB },
     { "tvd0",       0x01c31000, 4 * KiB },
@@ -167,6 +167,9 @@ enum {
     AW_R40_GIC_SPI_UART1     =  2,
     AW_R40_GIC_SPI_UART2     =  3,
     AW_R40_GIC_SPI_UART3     =  4,
+    AW_R40_GIC_SPI_TWI0      =  7,
+    AW_R40_GIC_SPI_TWI1      =  8,
+    AW_R40_GIC_SPI_TWI2      =  9,
     AW_R40_GIC_SPI_UART4     = 17,
     AW_R40_GIC_SPI_UART5     = 18,
     AW_R40_GIC_SPI_UART6     = 19,
@@ -177,6 +180,8 @@ enum {
     AW_R40_GIC_SPI_MMC1      = 33,
     AW_R40_GIC_SPI_MMC2      = 34,
     AW_R40_GIC_SPI_MMC3      = 35,
+    AW_R40_GIC_SPI_TWI3      = 88,
+    AW_R40_GIC_SPI_TWI4      = 89,
 };
 
 /* Allwinner R40 general constants */
@@ -262,6 +267,12 @@ static void allwinner_r40_init(Object *obj)
     object_initialize_child(obj, "mmc1", &s->mmc1, TYPE_AW_SDHOST_SUN5I);
     object_initialize_child(obj, "mmc2", &s->mmc2, TYPE_AW_SDHOST_SUN5I);
     object_initialize_child(obj, "mmc3", &s->mmc3, TYPE_AW_SDHOST_SUN5I);
+
+    object_initialize_child(obj, "twi0", &s->i2c0, TYPE_AW_I2C_SUN6I);
+    object_initialize_child(obj, "twi1", &s->i2c1, TYPE_AW_I2C_SUN6I);
+    object_initialize_child(obj, "twi2", &s->i2c2, TYPE_AW_I2C_SUN6I);
+    object_initialize_child(obj, "twi3", &s->i2c3, TYPE_AW_I2C_SUN6I);
+    object_initialize_child(obj, "twi4", &s->i2c4, TYPE_AW_I2C_SUN6I);
 }
 
 static void allwinner_r40_realize(DeviceState *dev, Error **errp)
@@ -428,6 +439,32 @@ static void allwinner_r40_realize(DeviceState *dev, Error **errp)
     serial_mm_init(get_system_memory(), s->memmap[AW_R40_DEV_UART7], 2,
                    qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_UART7),
                    115200, serial_hd(7), DEVICE_NATIVE_ENDIAN);
+
+    /* I2C */
+    sysbus_realize(SYS_BUS_DEVICE(&s->i2c0), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->i2c0), 0, s->memmap[AW_R40_DEV_TWI0]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->i2c0), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_TWI0));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->i2c1), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->i2c1), 0, s->memmap[AW_R40_DEV_TWI1]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->i2c1), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_TWI1));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->i2c2), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->i2c2), 0, s->memmap[AW_R40_DEV_TWI2]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->i2c2), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_TWI2));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->i2c3), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->i2c3), 0, s->memmap[AW_R40_DEV_TWI3]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->i2c3), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_TWI3));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->i2c4), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->i2c4), 0, s->memmap[AW_R40_DEV_TWI4]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->i2c4), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_TWI4));
 
     /* Unimplemented devices */
     for (i = 0; i < ARRAY_SIZE(r40_unimplemented); i++) {
