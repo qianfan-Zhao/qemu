@@ -327,7 +327,7 @@ config ALLWINNER_A10
     select ALLWINNER_A10_DRAMC
     select ALLWINNER_EMAC
     select ALLWINNER_I2C
-    select AXP209_PMU
+    select AXP2XX_PMU
     select SERIAL
     select UNIMP
 
@@ -347,6 +347,7 @@ config ALLWINNER_H3
 config ALLWINNER_R40
     bool
     select ALLWINNER_A10_PIT
+    select AXP2XX_PMU
     select SERIAL
     select ARM_TIMER
     select ARM_GIC
