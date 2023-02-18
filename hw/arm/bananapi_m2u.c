@@ -22,6 +22,7 @@
 #include "exec/address-spaces.h"
 #include "qapi/error.h"
 #include "hw/boards.h"
+#include "hw/i2c/i2c.h"
 #include "hw/qdev-properties.h"
 #include "hw/arm/allwinner-r40.h"
 
@@ -90,6 +91,10 @@ static void bpim2u_init(MachineState *machine)
                      !machine->kernel_filename && !bootroom_loaded,
                      &bootroom_loaded);
     mmc_attach_drive(r40, &r40->mmc3, 3, false, NULL);
+
+    /* Connect AXP221 */
+    i2c = I2C_BUS(qdev_get_child_bus(DEVICE(&r40->i2c0), "i2c"));
+    i2c_slave_create_simple(i2c, "axp221_pmu", 0x34);
 
     /* SDRAM */
     memory_region_add_subregion(get_system_memory(), r40->memmap[AW_R40_DEV_SDRAM],
