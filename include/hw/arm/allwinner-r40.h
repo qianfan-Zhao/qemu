@@ -26,6 +26,7 @@
 #include "hw/intc/arm_gic.h"
 #include "hw/sd/allwinner-sdhost.h"
 #include "hw/misc/allwinner-r40-ccu.h"
+#include "hw/misc/allwinner-r40-dramc.h"
 #include "hw/i2c/allwinner-i2c.h"
 #include "target/arm/cpu.h"
 #include "sysemu/block-backend.h"
@@ -58,7 +59,10 @@ enum {
     AW_R40_DEV_GIC_CPU,
     AW_R40_DEV_GIC_HYP,
     AW_R40_DEV_GIC_VCPU,
-    AW_R40_DEV_SDRAM
+    AW_R40_DEV_SDRAM,
+    AW_R40_DEV_DRAMCOM,
+    AW_R40_DEV_DRAMCTL,
+    AW_R40_DEV_DRAMPHY,
 };
 
 #define AW_R40_NUM_CPUS      (4)
@@ -87,6 +91,12 @@ struct AwR40State {
     DeviceState parent_obj;
     /*< public >*/
 
+    /** Physical base address for start of RAM */
+    hwaddr ram_addr;
+
+    /** Total RAM size in megabytes */
+    uint32_t ram_size;
+
     ARMCPU cpus[AW_R40_NUM_CPUS];
     const hwaddr *memmap;
     AwA10PITState timer;
@@ -95,6 +105,7 @@ struct AwR40State {
     AwSdHostState mmc2;
     AwSdHostState mmc3;
     AwR40ClockCtlState ccu;
+    AwR40DramCtlState dramc;
     AWI2CState i2c0;
     AWI2CState i2c1;
     AWI2CState i2c2;
