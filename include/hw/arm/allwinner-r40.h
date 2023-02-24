@@ -28,6 +28,7 @@
 #include "hw/misc/allwinner-r40-ccu.h"
 #include "hw/misc/allwinner-r40-dramc.h"
 #include "hw/i2c/allwinner-i2c.h"
+#include "hw/ssi/allwinner_sun6i_spi.h"
 #include "target/arm/cpu.h"
 #include "sysemu/block-backend.h"
 
@@ -36,6 +37,10 @@ enum {
     AW_R40_DEV_SRAM_A2,
     AW_R40_DEV_SRAM_A3,
     AW_R40_DEV_SRAM_A4,
+    AW_R40_DEV_SPI0,
+    AW_R40_DEV_SPI1,
+    AW_R40_DEV_SPI2,
+    AW_R40_DEV_SPI3,
     AW_R40_DEV_MMC0,
     AW_R40_DEV_MMC1,
     AW_R40_DEV_MMC2,
@@ -111,6 +116,10 @@ struct AwR40State {
     AWI2CState i2c2;
     AWI2CState i2c3;
     AWI2CState i2c4;
+    AWSpiState spi0;
+    AWSpiState spi1;
+    AWSpiState spi2;
+    AWSpiState spi3;
     GICState gic;
     MemoryRegion sram_a1;
     MemoryRegion sram_a2;

@@ -39,10 +39,14 @@ const hwaddr allwinner_r40_memmap[] = {
     [AW_R40_DEV_SRAM_A2]    = 0x00004000,
     [AW_R40_DEV_SRAM_A3]    = 0x00008000,
     [AW_R40_DEV_SRAM_A4]    = 0x0000b400,
+    [AW_R40_DEV_SPI0]       = 0x01c05000,
+    [AW_R40_DEV_SPI1]       = 0x01c06000,
     [AW_R40_DEV_MMC0]       = 0x01c0f000,
     [AW_R40_DEV_MMC1]       = 0x01c10000,
     [AW_R40_DEV_MMC2]       = 0x01c11000,
     [AW_R40_DEV_MMC3]       = 0x01c12000,
+    [AW_R40_DEV_SPI2]       = 0x01c17000,
+    [AW_R40_DEV_SPI3]       = 0x01c1f000,
     [AW_R40_DEV_CCU]        = 0x01c20000,
     [AW_R40_DEV_PIT]        = 0x01c20c00,
     [AW_R40_DEV_UART0]      = 0x01c28000,
@@ -82,21 +86,17 @@ static struct AwR40Unimplemented r40_unimplemented[] = {
     { "dma",        0x01c02000, 4 * KiB },
     { "nfdc",       0x01c03000, 4 * KiB },
     { "ts",         0x01c04000, 4 * KiB },
-    { "spi0",       0x01c05000, 4 * KiB },
-    { "spi1",       0x01c06000, 4 * KiB },
     { "cs0",        0x01c09000, 4 * KiB },
     { "keymem",     0x01c0a000, 4 * KiB },
     { "emac",       0x01c0b000, 4 * KiB },
     { "usb0-otg",   0x01c13000, 4 * KiB },
     { "usb0-host",  0x01c14000, 4 * KiB },
     { "crypto",     0x01c15000, 4 * KiB },
-    { "spi2",       0x01c17000, 4 * KiB },
     { "sata",       0x01c18000, 4 * KiB },
     { "usb1-host",  0x01c19000, 4 * KiB },
     { "sid",        0x01c1b000, 4 * KiB },
     { "usb2-host",  0x01c1c000, 4 * KiB },
     { "cs1",        0x01c1d000, 4 * KiB },
-    { "spi3",       0x01c1f000, 4 * KiB },
     { "rtc",        0x01c20400, 1 * KiB },
     { "pio",        0x01c20800, 1 * KiB },
     { "owa",        0x01c21000, 1 * KiB },
@@ -171,6 +171,9 @@ enum {
     AW_R40_GIC_SPI_TWI0      =  7,
     AW_R40_GIC_SPI_TWI1      =  8,
     AW_R40_GIC_SPI_TWI2      =  9,
+    AW_R40_GIC_SPI_SPI0      = 10,
+    AW_R40_GIC_SPI_SPI1      = 11,
+    AW_R40_GIC_SPI_SPI2      = 12,
     AW_R40_GIC_SPI_UART4     = 17,
     AW_R40_GIC_SPI_UART5     = 18,
     AW_R40_GIC_SPI_UART6     = 19,
@@ -181,6 +184,7 @@ enum {
     AW_R40_GIC_SPI_MMC1      = 33,
     AW_R40_GIC_SPI_MMC2      = 34,
     AW_R40_GIC_SPI_MMC3      = 35,
+    AW_R40_GIC_SPI_SPI3      = 50,
     AW_R40_GIC_SPI_TWI3      = 88,
     AW_R40_GIC_SPI_TWI4      = 89,
 };
@@ -274,6 +278,11 @@ static void allwinner_r40_init(Object *obj)
     object_initialize_child(obj, "twi2", &s->i2c2, TYPE_AW_I2C_SUN6I);
     object_initialize_child(obj, "twi3", &s->i2c3, TYPE_AW_I2C_SUN6I);
     object_initialize_child(obj, "twi4", &s->i2c4, TYPE_AW_I2C_SUN6I);
+
+    object_initialize_child(obj, "spi0", &s->spi0, TYPE_AW_SPI_SUN8I);
+    object_initialize_child(obj, "spi1", &s->spi1, TYPE_AW_SPI_SUN8I);
+    object_initialize_child(obj, "spi2", &s->spi2, TYPE_AW_SPI_SUN8I);
+    object_initialize_child(obj, "spi3", &s->spi3, TYPE_AW_SPI_SUN8I);
 
     object_initialize_child(obj, "dramc", &s->dramc, TYPE_AW_R40_DRAMC);
     object_property_add_alias(obj, "ram-addr", OBJECT(&s->dramc),
@@ -472,6 +481,27 @@ static void allwinner_r40_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->i2c4), 0, s->memmap[AW_R40_DEV_TWI4]);
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->i2c4), 0,
                        qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_TWI4));
+
+    /* SPI */
+    sysbus_realize(SYS_BUS_DEVICE(&s->spi0), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->spi0), 0, s->memmap[AW_R40_DEV_SPI0]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->spi0), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_DEV_SPI0));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->spi1), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->spi1), 0, s->memmap[AW_R40_DEV_SPI1]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->spi1), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_DEV_SPI1));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->spi2), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->spi2), 0, s->memmap[AW_R40_DEV_SPI2]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->spi2), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_DEV_SPI2));
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->spi3), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->spi3), 0, s->memmap[AW_R40_DEV_SPI3]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->spi3), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_DEV_SPI3));
 
     /* DRAMC */
     sysbus_realize(SYS_BUS_DEVICE(&s->dramc), &error_fatal);
