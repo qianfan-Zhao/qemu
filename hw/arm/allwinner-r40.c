@@ -265,10 +265,11 @@ static void allwinner_r40_init(Object *obj)
                               "clk1-freq");
 
     object_initialize_child(obj, "ccu", &s->ccu, TYPE_AW_R40_CCU);
-    object_initialize_child(obj, "mmc0", &s->mmc0, TYPE_AW_SDHOST_SUN5I);
-    object_initialize_child(obj, "mmc1", &s->mmc1, TYPE_AW_SDHOST_SUN5I);
-    object_initialize_child(obj, "mmc2", &s->mmc2, TYPE_AW_SDHOST_SUN5I);
-    object_initialize_child(obj, "mmc3", &s->mmc3, TYPE_AW_SDHOST_SUN5I);
+    object_initialize_child(obj, "mmc0", &s->mmc0, TYPE_AW_SDHOST_SUN50I_A64);
+    object_initialize_child(obj, "mmc1", &s->mmc1, TYPE_AW_SDHOST_SUN50I_A64);
+    object_initialize_child(obj, "mmc2", &s->mmc2,
+                            TYPE_AW_SDHOST_SUN50I_A64_EMMC);
+    object_initialize_child(obj, "mmc3", &s->mmc3, TYPE_AW_SDHOST_SUN50I_A64);
 
     object_initialize_child(obj, "twi0", &s->i2c0, TYPE_AW_I2C_SUN6I);
     object_initialize_child(obj, "twi1", &s->i2c1, TYPE_AW_I2C_SUN6I);
