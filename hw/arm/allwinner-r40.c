@@ -39,6 +39,7 @@ const hwaddr allwinner_r40_memmap[] = {
     [AW_R40_DEV_SRAM_A2]    = 0x00004000,
     [AW_R40_DEV_SRAM_A3]    = 0x00008000,
     [AW_R40_DEV_SRAM_A4]    = 0x0000b400,
+    [AW_R40_DEV_EMAC]       = 0x01c0b000,
     [AW_R40_DEV_MMC0]       = 0x01c0f000,
     [AW_R40_DEV_MMC1]       = 0x01c10000,
     [AW_R40_DEV_MMC2]       = 0x01c11000,
@@ -58,6 +59,7 @@ const hwaddr allwinner_r40_memmap[] = {
     [AW_R40_DEV_TWI2]       = 0x01c2b400,
     [AW_R40_DEV_TWI3]       = 0x01c2b800,
     [AW_R40_DEV_TWI4]       = 0x01c2c000,
+    [AW_R40_DEV_GMAC]       = 0x01c50000,
     [AW_R40_DEV_DRAMCOM]    = 0x01c62000,
     [AW_R40_DEV_DRAMCTL]    = 0x01c63000,
     [AW_R40_DEV_DRAMPHY]    = 0x01c65000,
@@ -86,7 +88,6 @@ static struct AwR40Unimplemented r40_unimplemented[] = {
     { "spi1",       0x01c06000, 4 * KiB },
     { "cs0",        0x01c09000, 4 * KiB },
     { "keymem",     0x01c0a000, 4 * KiB },
-    { "emac",       0x01c0b000, 4 * KiB },
     { "usb0-otg",   0x01c13000, 4 * KiB },
     { "usb0-host",  0x01c14000, 4 * KiB },
     { "crypto",     0x01c15000, 4 * KiB },
@@ -131,7 +132,6 @@ static struct AwR40Unimplemented r40_unimplemented[] = {
     { "tvd2",       0x01c33000, 4 * KiB },
     { "tvd3",       0x01c34000, 4 * KiB },
     { "gpu",        0x01c40000, 64 * KiB },
-    { "gmac",       0x01c50000, 64 * KiB },
     { "hstmr",      0x01c60000, 4 * KiB },
     { "tcon-top",   0x01c70000, 4 * KiB },
     { "lcd0",       0x01c71000, 4 * KiB },
@@ -182,6 +182,8 @@ enum {
     AW_R40_GIC_SPI_MMC1      = 33,
     AW_R40_GIC_SPI_MMC2      = 34,
     AW_R40_GIC_SPI_MMC3      = 35,
+    AW_R40_GIC_SPI_EMAC      = 55,
+    AW_R40_GIC_SPI_GMAC      = 85,
     AW_R40_GIC_SPI_TWI3      = 88,
     AW_R40_GIC_SPI_TWI4      = 89,
 };
@@ -277,6 +279,11 @@ static void allwinner_r40_init(Object *obj)
     object_initialize_child(obj, "twi3", &s->i2c3, TYPE_AW_I2C_SUN6I);
     object_initialize_child(obj, "twi4", &s->i2c4, TYPE_AW_I2C_SUN6I);
 
+    object_initialize_child(obj, "emac", &s->emac, TYPE_AW_EMAC);
+    object_initialize_child(obj, "gmac", &s->gmac, TYPE_AW_SUN8I_EMAC);
+    object_property_add_alias(obj, "gmac-phy-addr",
+                              OBJECT(&s->gmac), "phy-addr");
+
     object_initialize_child(obj, "dramc", &s->dramc, TYPE_AW_R40_DRAMC);
     object_property_add_alias(obj, "ram-addr", OBJECT(&s->dramc),
                              "ram-addr");
@@ -286,6 +293,7 @@ static void allwinner_r40_init(Object *obj)
 
 static void allwinner_r40_realize(DeviceState *dev, Error **errp)
 {
+    const char *r40_nic_models[] = { "gmac", "emac", NULL };
     AwR40State *s = AW_R40(dev);
     unsigned i;
 
@@ -480,6 +488,42 @@ static void allwinner_r40_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->dramc), 0, s->memmap[AW_R40_DEV_DRAMCOM]);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->dramc), 1, s->memmap[AW_R40_DEV_DRAMCTL]);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->dramc), 2, s->memmap[AW_R40_DEV_DRAMPHY]);
+
+    /* nic support gmac and emac */
+    for (int i = 0; i < ARRAY_SIZE(r40_nic_models) - 1; i++) {
+        NICInfo *nic = &nd_table[i];
+
+        if (!nic->used)
+            continue;
+        if (qemu_show_nic_models(nic->model, r40_nic_models))
+            exit(0);
+
+        switch (qemu_find_nic_model(nic, r40_nic_models, r40_nic_models[0])) {
+        case 0: /* gmac */
+            qdev_set_nic_properties(DEVICE(&s->gmac), nic);
+            break;
+        case 1: /* emac */
+            qdev_set_nic_properties(DEVICE(&s->emac), nic);
+            break;
+        default:
+            exit(1);
+            break;
+        }
+    }
+
+    /* GMAC */
+    object_property_set_link(OBJECT(&s->gmac), "dma-memory",
+                                     OBJECT(get_system_memory()), &error_fatal);
+    sysbus_realize(SYS_BUS_DEVICE(&s->gmac), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->gmac), 0, s->memmap[AW_R40_DEV_GMAC]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->gmac), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_GMAC));
+
+    /* EMAC */
+    sysbus_realize(SYS_BUS_DEVICE(&s->emac), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->emac), 0, s->memmap[AW_R40_DEV_EMAC]);
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->emac), 0,
+                       qdev_get_gpio_in(DEVICE(&s->gic), AW_R40_GIC_SPI_EMAC));
 
     /* Unimplemented devices */
     for (i = 0; i < ARRAY_SIZE(r40_unimplemented); i++) {
