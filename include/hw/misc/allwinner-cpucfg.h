@@ -29,7 +29,11 @@
  */
 
 #define TYPE_AW_CPUCFG   "allwinner-cpucfg"
-OBJECT_DECLARE_SIMPLE_TYPE(AwCpuCfgState, AW_CPUCFG)
+
+/* CPUCFG for allwinner sun8i r40 */
+#define TYPE_AW_CPUCFG_SUN8I_R40    TYPE_AW_CPUCFG "-sun8i-r40"
+
+OBJECT_DECLARE_TYPE(AwCpuCfgState, AwCpuCfgClass, AW_CPUCFG)
 
 /** @} */
 
@@ -46,6 +50,25 @@ struct AwCpuCfgState {
     uint32_t super_standby;
     uint32_t entry_addr;
 
+    /* registers for allwinner sun8i r40 device */
+    uint32_t power_off_gating;
+    uint32_t power_switch[4];
+    uint32_t power_switch_delay;
+    uint32_t config_delay;
+    uint32_t power_down_cfg;
+    uint32_t power_up_cfg[6];
+};
+
+/**
+ * Allwinner CPU Configuration Module class state
+ */
+struct AwCpuCfgClass {
+    /*< private >*/
+    SysBusDeviceClass parent_class;
+    /*< public >*/
+
+    /** Maximum buffer size in bytes per DMA descriptor */
+    bool is_sun8i_r40;
 };
 
 #endif /* HW_MISC_ALLWINNER_CPUCFG_H */

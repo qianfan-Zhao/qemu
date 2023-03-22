@@ -47,6 +47,7 @@ const hwaddr allwinner_r40_memmap[] = {
     [AW_R40_DEV_MMC3]       = 0x01c12000,
     [AW_R40_DEV_CCU]        = 0x01c20000,
     [AW_R40_DEV_PIT]        = 0x01c20c00,
+    [AW_R40_DEV_CPUCFG]     = 0x01c25c00,
     [AW_R40_DEV_UART0]      = 0x01c28000,
     [AW_R40_DEV_UART1]      = 0x01c28400,
     [AW_R40_DEV_UART2]      = 0x01c28800,
@@ -114,7 +115,6 @@ static struct AwR40Unimplemented r40_unimplemented[] = {
     { "ths",        0x01c24c00, 1 * KiB },
     { "rtp",        0x01c25000, 1 * KiB },
     { "pmu",        0x01c25400, 1 * KiB },
-    { "cpu-cfg",    0x01c25c00, 1 * KiB },
     { "uart0",      0x01c28000, 1 * KiB },
     { "uart1",      0x01c28400, 1 * KiB },
     { "uart2",      0x01c28800, 1 * KiB },
@@ -267,6 +267,7 @@ static void allwinner_r40_init(Object *obj)
                               "clk1-freq");
 
     object_initialize_child(obj, "ccu", &s->ccu, TYPE_AW_R40_CCU);
+    object_initialize_child(obj, "cpucfg", &s->cpucfg, TYPE_AW_CPUCFG_SUN8I_R40);
     object_initialize_child(obj, "mmc0", &s->mmc0, TYPE_AW_SDHOST_SUN50I_A64);
     object_initialize_child(obj, "mmc1", &s->mmc1, TYPE_AW_SDHOST_SUN50I_A64);
     object_initialize_child(obj, "mmc2", &s->mmc2,
@@ -406,6 +407,10 @@ static void allwinner_r40_realize(DeviceState *dev, Error **errp)
     /* Clock Control Unit */
     sysbus_realize(SYS_BUS_DEVICE(&s->ccu), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccu), 0, s->memmap[AW_R40_DEV_CCU]);
+
+    /* CPUCFG */
+    sysbus_realize(SYS_BUS_DEVICE(&s->cpucfg), &error_fatal);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->cpucfg), 0, s->memmap[AW_R40_DEV_CPUCFG]);
 
     /* SD/MMC */
     object_property_set_link(OBJECT(&s->mmc0), "dma-memory",

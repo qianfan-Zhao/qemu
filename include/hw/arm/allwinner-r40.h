@@ -28,6 +28,7 @@
 #include "hw/misc/allwinner-r40-ccu.h"
 #include "hw/misc/allwinner-r40-dramc.h"
 #include "hw/misc/allwinner-r40-sramc.h"
+#include "hw/misc/allwinner-cpucfg.h"
 #include "hw/i2c/allwinner-i2c.h"
 #include "hw/net/allwinner_emac.h"
 #include "hw/net/allwinner-sun8i-emac.h"
@@ -47,6 +48,7 @@ enum {
     AW_R40_DEV_MMC3,
     AW_R40_DEV_CCU,
     AW_R40_DEV_PIT,
+    AW_R40_DEV_CPUCFG,
     AW_R40_DEV_UART0,
     AW_R40_DEV_UART1,
     AW_R40_DEV_UART2,
@@ -112,6 +114,7 @@ struct AwR40State {
     AwSdHostState mmc2;
     AwSdHostState mmc3;
     AwR40ClockCtlState ccu;
+    AwCpuCfgState cpucfg;
     AwR40DramCtlState dramc;
     AWI2CState i2c0;
     AWI2CState i2c1;
